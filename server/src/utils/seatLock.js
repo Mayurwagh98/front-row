@@ -1,4 +1,4 @@
-import { redis } from '../config/redis.js';
+import { redis } from "../config/redis.js";
 
 export const LOCK_TTL_SECONDS = 300; // 5-minute hold
 const lockKey = (showtimeId, seatId) => `lock:seat:${showtimeId}:${seatId}`;
@@ -12,8 +12,11 @@ const lockKey = (showtimeId, seatId) => `lock:seat:${showtimeId}:${seatId}`;
  * The value is the sessionId so we can verify ownership later.
  */
 export async function lockSeat(showtimeId, seatId, sessionId) {
-  const res = await redis.set(lockKey(showtimeId, seatId), sessionId, { nx: true, ex: LOCK_TTL_SECONDS });
-  return res === 'OK';
+  const res = await redis.set(lockKey(showtimeId, seatId), sessionId, {
+    nx: true,
+    ex: LOCK_TTL_SECONDS,
+  });
+  return res === "OK";
 }
 
 // Compare-and-delete in Lua so GET+DEL is atomic: we can never delete a lock that
@@ -26,11 +29,16 @@ else
 end`;
 
 export async function releaseSeat(showtimeId, seatId, sessionId) {
-  const res = await redis.eval(RELEASE_SCRIPT, [lockKey(showtimeId, seatId)], [sessionId]);
+  const res = await redis.eval(
+    RELEASE_SCRIPT,
+    [lockKey(showtimeId, seatId)],
+    [sessionId],
+  );
   return res === 1;
 }
 
-export const getLockOwner = (showtimeId, seatId) => redis.get(lockKey(showtimeId, seatId));
+export const getLockOwner = (showtimeId, seatId) =>
+  redis.get(lockKey(showtimeId, seatId));
 
 /** Lock several seats all-or-nothing. Returns { ok, failedSeatId }. */
 export async function lockSeats(showtimeId, seatIds, sessionId) {
@@ -38,7 +46,9 @@ export async function lockSeats(showtimeId, seatIds, sessionId) {
   for (const id of seatIds) {
     if (await lockSeat(showtimeId, id, sessionId)) acquired.push(id);
     else {
-      await Promise.all(acquired.map((a) => releaseSeat(showtimeId, a, sessionId)));
+      await Promise.all(
+        acquired.map((a) => releaseSeat(showtimeId, a, sessionId)),
+      );
       return { ok: false, failedSeatId: id };
     }
   }

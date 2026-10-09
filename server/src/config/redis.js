@@ -1,4 +1,4 @@
-import { Redis } from '@upstash/redis';
+import { Redis } from "@upstash/redis";
 
 // Upstash REST client (HTTP based, no persistent TCP connection needed)
 export const redis = new Redis({

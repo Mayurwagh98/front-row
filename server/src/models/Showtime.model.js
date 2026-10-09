@@ -1,8 +1,8 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const showtimeSchema = new mongoose.Schema(
   {
-    movie: { type: mongoose.Schema.Types.ObjectId, ref: 'Movie' },
+    movie: { type: mongoose.Schema.Types.ObjectId, ref: "Movie" },
     movieTitle: { type: String, required: true }, // denormalised so listings/tickets need no join
     venue: { type: String, required: true },
     screen: { type: String, required: true },
@@ -11,7 +11,7 @@ const showtimeSchema = new mongoose.Schema(
     price: { type: Number, required: true }, // "from" price = cheapest tier (shown in listings)
     tiers: [{ name: String, price: Number, _id: false }], // legend: Classic / Prime / Recliner
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export default mongoose.model('Showtime', showtimeSchema);
+export default mongoose.model("Showtime", showtimeSchema);
