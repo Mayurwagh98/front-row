@@ -1,6 +1,6 @@
 import "dotenv/config";
 import http from "http";
-import app from "./app.js";
+import app, { allowedOrigins } from "./app.js";
 import { initSocket } from "./sockets/index.js";
 import { connectDB } from "./config/db.js";
 import { startLockSweeper } from "./utils/lockSweeper.js";
@@ -11,7 +11,7 @@ if (!process.env.JWT_SECRET) {
 }
 const PORT = process.env.PORT || 5000;
 const httpServer = http.createServer(app);
-const io = initSocket(httpServer, process.env.CLIENT_URL);
+const io = initSocket(httpServer, allowedOrigins); // same origin list as the REST CORS config
 app.set("io", io);
 
 connectDB().then(() => {

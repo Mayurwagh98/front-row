@@ -1,51 +1,38 @@
-import { Router } from "express";
-import multer from "multer";
-import crypto from "crypto";
-import path from "path";
-import { fileURLToPath } from "url";
-import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { Router } from 'express';
+import multer from 'multer';
+import mongoose from 'mongoose';
+import Upload from '../models/Upload.model.js';
+import { requireAuth, requireAdmin } from '../middleware/auth.js';
+import { asyncHandler as h } from '../utils/asyncHandler.js';
 
-export const UPLOAD_DIR = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../uploads",
-);
-
-// Extension comes from the verified mimetype, never from the client's filename.
-const EXT = {
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-  "image/webp": ".webp",
-};
+const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: UPLOAD_DIR,
-    filename: (req, file, cb) =>
-      cb(null, crypto.randomUUID() + EXT[file.mimetype]),
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 3 * 1024 * 1024 }, // 3 MB
-  fileFilter: (req, file, cb) =>
-    cb(EXT[file.mimetype] ? null : new Error("BAD_TYPE"), !!EXT[file.mimetype]),
+  fileFilter: (req, file, cb) => cb(ALLOWED.has(file.mimetype) ? null : new Error('BAD_TYPE'), ALLOWED.has(file.mimetype)),
 });
 
-const router = Router();
-// Admin only: posters are uploaded while creating a movie.
-router.post(
-  "/poster",
-  requireAuth,
-  requireAdmin,
-  upload.single("poster"),
-  (req, res) => {
-    if (!req.file)
-      return res
-        .status(400)
-        .json({ success: false, message: "Choose an image to upload." });
-    const base =
-      process.env.PUBLIC_URL || `${req.protocol}://${req.get("host")}`;
-    res
-      .status(201)
-      .json({ success: true, url: `${base}/uploads/${req.file.filename}` });
-  },
-);
+// POST /api/uploads/poster  (admin only)
+export const uploadRouter = Router();
+uploadRouter.post('/poster', requireAuth, requireAdmin, upload.single('poster'), h(async (req, res) => {
+  if (!req.file) return res.status(400).json({ success: false, message: 'Choose an image to upload.' });
+  const doc = await Upload.create({ data: req.file.buffer, contentType: req.file.mimetype });
+  const base = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
+  res.status(201).json({ success: true, url: `${base}/uploads/${doc._id}` });
+}));
 
-export default router;
+// GET /uploads/:id  (public: it's just a poster image)
+export const imageRouter = Router();
+imageRouter.get('/:id', h(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.sendStatus(404);
+  const doc = await Upload.findById(req.params.id);
+  if (!doc) return res.sendStatus(404);
+  res.set({
+    'Content-Type': doc.contentType,
+    'Cache-Control': 'public, max-age=31536000, immutable',
+    'Cross-Origin-Resource-Policy': 'cross-origin', // the app (another origin) embeds these images
+    'X-Content-Type-Options': 'nosniff',
+  });
+  res.send(doc.data);
+}));

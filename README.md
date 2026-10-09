@@ -4,6 +4,8 @@ A cinema booking app where **two people can never book the same seat**, and ever
 
 **Stack:** Vite + React + Tailwind CSS · Express · MongoDB (Mongoose) · Upstash Redis · Socket.io · JWT auth
 
+**Deploying for free?** See [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ---
 
 ## Contents
