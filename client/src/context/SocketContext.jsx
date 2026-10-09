@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { io } from 'socket.io-client';
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { io } from "socket.io-client";
 
-const SocketContext = createContext({ socket: null, status: 'connecting' });
+const SocketContext = createContext({ socket: null, status: "connecting" });
 export const useSocketContext = () => useContext(SocketContext);
 
 /**
@@ -11,7 +11,7 @@ export const useSocketContext = () => useContext(SocketContext);
  */
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState(null);
-  const [status, setStatus] = useState('connecting');
+  const [status, setStatus] = useState("connecting");
 
   useEffect(() => {
     const s = io(import.meta.env.VITE_SOCKET_URL, {
@@ -21,14 +21,16 @@ export function SocketProvider({ children }) {
     });
     setSocket(s);
 
-    s.on('connect', () => setStatus('connected'));
-    s.on('disconnect', () => setStatus('disconnected'));
-    s.on('connect_error', () => setStatus('reconnecting'));
-    s.io.on('reconnect_attempt', () => setStatus('reconnecting'));
+    s.on("connect", () => setStatus("connected"));
+    s.on("disconnect", () => setStatus("disconnected"));
+    s.on("connect_error", () => setStatus("reconnecting"));
+    s.io.on("reconnect_attempt", () => setStatus("reconnecting"));
 
     return () => s.disconnect();
   }, []);
 
   const value = useMemo(() => ({ socket, status }), [socket, status]);
-  return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
+  return (
+    <SocketContext.Provider value={value}>{children}</SocketContext.Provider>
+  );
 }

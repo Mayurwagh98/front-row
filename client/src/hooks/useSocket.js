@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { useSocketContext } from '../context/SocketContext.jsx';
+import { useEffect, useRef } from "react";
+import { useSocketContext } from "../context/SocketContext.jsx";
 
 /**
  * Joins the showtime room and subscribes to seat events.
@@ -18,7 +18,7 @@ export function useShowtimeSocket(showtimeId, handlers) {
     if (!socket || !showtimeId) return;
 
     const join = () => {
-      socket.emit('join-showtime', showtimeId); // rooms are lost on reconnect -> rejoin
+      socket.emit("join-showtime", showtimeId); // rooms are lost on reconnect -> rejoin
       ref.current.onSync?.();
     };
     const locked = (p) => ref.current.onLocked?.(p);
@@ -26,17 +26,17 @@ export function useShowtimeSocket(showtimeId, handlers) {
     const booked = (p) => ref.current.onBooked?.(p);
 
     if (socket.connected) join();
-    socket.on('connect', join);
-    socket.on('seat-locked', locked);
-    socket.on('seat-released', released);
-    socket.on('seat-booked', booked);
+    socket.on("connect", join);
+    socket.on("seat-locked", locked);
+    socket.on("seat-released", released);
+    socket.on("seat-booked", booked);
 
     return () => {
-      socket.emit('leave-showtime', showtimeId);
-      socket.off('connect', join);
-      socket.off('seat-locked', locked);
-      socket.off('seat-released', released);
-      socket.off('seat-booked', booked);
+      socket.emit("leave-showtime", showtimeId);
+      socket.off("connect", join);
+      socket.off("seat-locked", locked);
+      socket.off("seat-released", released);
+      socket.off("seat-booked", booked);
     };
   }, [socket, showtimeId]);
 
