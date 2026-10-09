@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { color-scheme: dark; }
+  html, body { overflow-x: clip; } /* safety net: the page itself never scrolls sideways */
+  body { background: #140D17; color: #F1E8D4; font-family: 'Hanken Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; margin: 0; }
+  :focus-visible { outline: 2px solid #D2A857; outline-offset: 3px; border-radius: 6px; }
+  ::selection { background: #D2A857; color: #140D17; }
+}
+
+@layer components {
+  /* ---------- seats: state is encoded by fill AND pattern/icon, never colour alone ---------- */
+  .seat {
+    position: relative; display: grid; place-items: center;
+    height: 1.95rem; border-radius: .75rem .75rem .35rem .35rem;
+    font-size: .625rem; font-weight: 700; letter-spacing: .02em;
+    transition: transform .15s ease, background-color .25s ease, box-shadow .25s ease, color .25s ease;
+  }
+  .seat[data-state='available'] {
+    background: #D9CDB4; color: #2B2118; box-shadow: inset 0 -5px 0 rgba(43,33,24,.2); cursor: pointer;
+  }
+  .seat[data-state='available']:hover { background: #F1E8D4; transform: translateY(-3px); }
+  /* tiers (only visible while available): front = plain, prime = warmer, recliner = wide + brass crown */
+  .seat[data-state='available'][data-tier='Classic'] { background: #BDB19A; }
+  .seat[data-state='available'][data-tier='Prime'] { background: #D9CDB4; }
+  .seat[data-state='available'][data-tier='Recliner'] { background: #E8D5A2; box-shadow: inset 0 -5px 0 rgba(43,33,24,.2), inset 0 3px 0 #D2A857; }
+  .seat[data-state='available'][data-tier]:hover { background: #F6EEDC; }
+  .seat[data-state='mine'] {
+    background: #D2A857; color: #2B2118; cursor: pointer;
+    box-shadow: inset 0 -5px 0 rgba(43,33,24,.22), 0 0 0 2px #F1E8D4, 0 0 22px rgba(210,168,87,.55);
+  }
+  .seat[data-state='locked'] {
+    background: repeating-linear-gradient(135deg, #3b2438 0 4px, #221424 4px 8px);
+    color: #A596A9; border: 1px dashed rgba(210,168,87,.4); cursor: not-allowed;
+  }
+  .seat[data-state='booked'] {
+    background: #1b1020; color: #5b475f; border: 1px solid #2c1b30; cursor: not-allowed;
+  }
+  .seat[data-pending='true'] { opacity: .55; animation: pulse 1s ease-in-out infinite; }
+
+  /* ---------- ticket ---------- */
+  .ticket { position: relative; background: #F1E8D4; color: #2B2118; border-radius: 1rem; }
+  .ticket::before, .ticket::after {
+    content: ''; position: absolute; top: var(--notch, 62%); width: 22px; height: 22px;
+    background: #140D17; border-radius: 9999px; transform: translateY(-50%);
+  }
+  .ticket::before { left: -11px; }
+  .ticket::after { right: -11px; }
+  .perf { border-top: 2px dashed rgba(43,33,24,.28); }
+  .barcode {
+    height: 44px;
+    background: repeating-linear-gradient(90deg, #2B2118 0 2px, transparent 2px 4px, #2B2118 4px 5px, transparent 5px 9px, #2B2118 9px 12px, transparent 12px 14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
