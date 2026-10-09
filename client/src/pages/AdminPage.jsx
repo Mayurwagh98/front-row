@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageShell from "../components/PageShell.jsx";
 import Toasts from "../components/Toasts.jsx";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import Poster from "../components/Poster.jsx";
 import { normalizePosterUrl } from "../utils/poster.js";
 import { Field } from "./AuthPage.jsx";
@@ -39,6 +40,7 @@ export default function AdminPage() {
   const [busy, setBusy] = useState("");
   const [uploading, setUploading] = useState(false);
   const [toasts, setToasts] = useState([]);
+  const [toDelete, setToDelete] = useState(null); // movie awaiting delete confirmation
 
   const toast = useCallback((msg, kind = "info") => {
     const id = crypto.randomUUID();
@@ -125,6 +127,29 @@ export default function AdminPage() {
       setBusy("");
     }
   };
+
+  const removeMovie = async (m) => {
+    setBusy(`del-${m._id}`);
+    try {
+      const { data } = await api.delete(`/movies/${m._id}`);
+      const d = data.deleted;
+      toast(
+        `"${m.title}" deleted (${d.showtimes} screenings, ${d.seats} seats, ${d.bookings} bookings).`,
+        "success",
+      );
+      setShow((f) => (f.movieId === m._id ? { ...f, movieId: "" } : f));
+      await load();
+    } catch (err) {
+      toast(errMsg(err), "error");
+    } finally {
+      setBusy("");
+      setToDelete(null);
+    }
+  };
+
+  const deleteCount = toDelete
+    ? showtimes.filter((s) => (s.movie?._id || s.movie) === toDelete._id).length
+    : 0;
 
   return (
     <PageShell width="max-w-5xl">
@@ -365,6 +390,40 @@ export default function AdminPage() {
         </form>
       </div>
 
+      <h2 className="mt-14 font-display text-3xl font-extrabold">Movies</h2>
+      <ul className="mt-4 divide-y divide-white/10 border-y border-white/10">
+        {movies.map((m) => (
+          <li
+            key={m._id}
+            className="flex flex-wrap items-center justify-between gap-3 py-3"
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <Poster
+                url={m.posterUrl}
+                title={m.title}
+                className="h-14 w-10 shrink-0 rounded ring-1 ring-white/10"
+              />
+              <div className="min-w-0">
+                <p className="truncate font-semibold">{m.title}</p>
+                <p className="text-sm text-mist">
+                  {[m.genre, m.language, m.durationMins && `${m.durationMins} min`]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setToDelete(m)}
+              disabled={busy === `del-${m._id}`}
+              className="rounded-xl border border-red-400/40 px-4 py-2 text-sm font-semibold text-red-300 transition hover:bg-red-500/10 disabled:opacity-50"
+            >
+              {busy === `del-${m._id}` ? "Deleting…" : "Delete"}
+            </button>
+          </li>
+        ))}
+        {!movies.length && <li className="py-4 text-mist">No movies yet.</li>}
+      </ul>
+
       <h2 className="mt-14 font-display text-3xl font-extrabold">
         Scheduled screenings
       </h2>
@@ -393,6 +452,17 @@ export default function AdminPage() {
           <li className="py-4 text-mist">Nothing scheduled yet.</li>
         )}
       </ul>
+      <ConfirmDialog
+        open={!!toDelete}
+        title={`Delete "${toDelete?.title}"?`}
+        confirmLabel="Delete movie"
+        busy={!!toDelete && busy === `del-${toDelete._id}`}
+        onCancel={() => setToDelete(null)}
+        onConfirm={() => removeMovie(toDelete)}
+      >
+        This permanently removes {deleteCount} screening{deleteCount === 1 ? "" : "s"}, all
+        their seats, bookings and active seat holds. This cannot be undone.
+      </ConfirmDialog>
       <Toasts
         toasts={toasts}
         onDismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))}

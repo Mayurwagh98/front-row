@@ -99,6 +99,10 @@ export default function ShowtimePage() {
       patch(seatIds, { status: "booked", lockedBy: null });
       pulse(seatIds);
     },
+    onDeleted: () => {
+      // An admin removed this movie: leave the dead seat map.
+      navigate("/movies", { replace: true });
+    },
   });
 
   /* ---------- lock / release ---------- */

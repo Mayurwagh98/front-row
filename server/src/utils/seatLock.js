@@ -54,3 +54,15 @@ export async function lockSeats(showtimeId, seatIds, sessionId) {
   }
   return { ok: true };
 }
+
+/**
+ * Delete every Redis hold for the given seats of one showtime (used when a movie is deleted).
+ * Keys are built from the seat ids we just removed from Mongo, so no SCAN is needed.
+ */
+export async function clearLocks(showtimeId, seatIds) {
+  const keys = seatIds.map((id) => lockKey(showtimeId, String(id)));
+  for (let i = 0; i < keys.length; i += 500) {
+    await redis.del(...keys.slice(i, i + 500)); // chunked: keep each Upstash request small
+  }
+  return keys.length;
+}

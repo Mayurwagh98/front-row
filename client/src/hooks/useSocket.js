@@ -24,12 +24,14 @@ export function useShowtimeSocket(showtimeId, handlers) {
     const locked = (p) => ref.current.onLocked?.(p);
     const released = (p) => ref.current.onReleased?.(p);
     const booked = (p) => ref.current.onBooked?.(p);
+    const deleted = (p) => ref.current.onDeleted?.(p);
 
     if (socket.connected) join();
     socket.on("connect", join);
     socket.on("seat-locked", locked);
     socket.on("seat-released", released);
     socket.on("seat-booked", booked);
+    socket.on("showtime-deleted", deleted);
 
     return () => {
       socket.emit("leave-showtime", showtimeId);
@@ -37,6 +39,7 @@ export function useShowtimeSocket(showtimeId, handlers) {
       socket.off("seat-locked", locked);
       socket.off("seat-released", released);
       socket.off("seat-booked", booked);
+      socket.off("showtime-deleted", deleted);
     };
   }, [socket, showtimeId]);
 
